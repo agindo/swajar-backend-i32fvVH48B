@@ -31,6 +31,8 @@ STATUS=3
 NIK=""
 PASSPHRASE=""
 LIMIT=""
+USERNAME=""
+PASSWORD=""
 LOG_FILE="/var/log/swajar-auto-signing.log"
 TIMEOUT=300  # 5 minutes timeout
 
@@ -58,6 +60,8 @@ Options:
                              4 = Menunggu esign_pertama
     -n, --nik NIK            NIK for electronic signature (required)
     -p, --passphrase PASS    Passphrase for signature (required)
+    -u, --username USER      API username for authentication (optional)
+    -w, --password PASS      API password for authentication (optional)
     -l, --limit LIMIT        Maximum number of certificates to process (optional)
     -h, --host HOST          API host (default: localhost)
     -P, --port PORT          API port (default: 8503)
@@ -68,8 +72,11 @@ Examples:
     # Basic auto signing for status 3
     $0 -s 3 -n "1234567890" -p "mypassphrase"
     
+    # Auto signing with username and password
+    $0 -s 3 -n "1234567890" -p "mypassphrase" -u "admin" -w "password123"
+    
     # Auto signing with limit
-    $0 -s 4 -n "1234567890" -p "mypassphrase" -l 20
+    $0 -s 4 -n "1234567890" -p "mypassphrase" -l 20 -u "admin" -w "password123"
     
     # Custom host and port
     $0 -s 3 -n "1234567890" -p "mypassphrase" -h 192.168.1.100 -P 8504
@@ -93,6 +100,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         -p|--passphrase)
             PASSPHRASE="$2"
+            shift 2
+            ;;
+        -u|--username)
+            USERNAME="$2"
+            shift 2
+            ;;
+        -w|--password)
+            PASSWORD="$2"
             shift 2
             ;;
         -l|--limit)
@@ -161,6 +176,11 @@ fi
     log_message "INFO" "API Port: $API_PORT"
     log_message "INFO" "Status: $STATUS"
     log_message "INFO" "Limit: ${LIMIT:-unlimited}"
+    if [[ -n "$USERNAME" ]]; then
+        log_message "INFO" "Authentication: Enabled (user: $USERNAME)"
+    else
+        log_message "INFO" "Authentication: Disabled"
+    fi
     log_message "INFO" "=========================================================================="
     
     # Build request URL
@@ -178,11 +198,21 @@ fi
     # Make API request with timeout
     START_TIME=$(date +%s)
     
-    if RESPONSE=$(curl -s -X POST "$REQUEST_URL" \
-                       -H "Content-Type: application/json" \
-                       --max-time $TIMEOUT \
-                       --connect-timeout 10 \
-                       -w "\n%{http_code}"); then
+    # Build curl command with optional authentication
+    CURL_CMD="curl -s -X POST \"$REQUEST_URL\" \
+                   -H \"Content-Type: application/json\" \
+                   --max-time $TIMEOUT \
+                   --connect-timeout 10"
+    
+    # Add Basic Authentication if username and password are provided
+    if [[ -n "$USERNAME" && -n "$PASSWORD" ]]; then
+        CURL_CMD="$CURL_CMD -u \"$USERNAME:$PASSWORD\""
+        log_message "INFO" "Using Basic Authentication"
+    fi
+    
+    CURL_CMD="$CURL_CMD -w \"\\n%{http_code}\""
+    
+    if RESPONSE=$(eval $CURL_CMD); then
         
         HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
         BODY=$(echo "$RESPONSE" | head -n -1)
