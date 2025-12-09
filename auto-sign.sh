@@ -29,7 +29,7 @@
 set -o pipefail
 
 # Configuration
-API_HOST="10.67.0.152"
+API_HOST="localhost"
 API_PORT="8503"
 LOG_FILE="/var/log/swajar-auto-signing.log"
 BEARER_TOKEN=""
@@ -98,10 +98,7 @@ mask_data() {
 # Validate Parameters
 # ============================================================================
 validate_parameters() {
-    if [ -z "$BEARER_TOKEN" ]; then
-        log_message "ERROR" "Bearer token is required"
-        exit 1
-    fi
+    # Token is now optional - no longer required
     
     if [ -z "$STATUS" ]; then
         log_message "ERROR" "Status is required"
@@ -128,7 +125,7 @@ validate_parameters() {
 # Execute Auto Signing
 # ============================================================================
 execute_auto_signing() {
-    local api_url="http://${API_HOST}:${API_PORT}/OAugBgiqr/auto-sign/trigger"
+    local api_url="http://${API_HOST}:${API_PORT}/760JBK6vawB5/auto-sign/trigger"
     api_url="${api_url}?status=${STATUS}"
     api_url="${api_url}&nik=${NIK}"
     api_url="${api_url}&passphrase=${PASSPHRASE}"
