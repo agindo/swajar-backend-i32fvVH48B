@@ -7,11 +7,11 @@
 #   ./auto-sign.sh -t <token> -s <status> -n <nik> -p <passphrase> [options]
 #
 # Parameters:
-#   -t, --token              Bearer token (REQUIRED)
 #   -s, --status             Certificate status (3 or 4) (REQUIRED)
 #   -n, --nik                NIK untuk signing (REQUIRED)
 #   -p, --passphrase         Passphrase untuk signing (REQUIRED)
 #   -l, --limit              Max certificates (Optional)
+#   -t, --token              Bearer token (Optional - not required)
 #   -h, --host               API host (Default: localhost)
 #   --port                   API port (Default: 8503)
 #   -v, --verbose            Verbose output
@@ -29,7 +29,7 @@
 set -o pipefail
 
 # Configuration
-API_HOST="localhost"
+API_HOST="10.67.0.152"
 API_PORT="8503"
 LOG_FILE="/var/log/swajar-auto-signing.log"
 BEARER_TOKEN=""
@@ -129,10 +129,13 @@ validate_parameters() {
 # ============================================================================
 execute_auto_signing() {
     local api_url="http://${API_HOST}:${API_PORT}/OAugBgiqr/auto-sign/trigger"
-    api_url="${api_url}?token=${BEARER_TOKEN}"
-    api_url="${api_url}&status=${STATUS}"
+    api_url="${api_url}?status=${STATUS}"
     api_url="${api_url}&nik=${NIK}"
     api_url="${api_url}&passphrase=${PASSPHRASE}"
+    
+    if [ -n "$BEARER_TOKEN" ] && [ -z "$BEARER_TOKEN" == false ]; then
+        api_url="${api_url}&token=${BEARER_TOKEN}"
+    fi
     
     if [ -n "$LIMIT" ] && [ "$LIMIT" -gt 0 ]; then
         api_url="${api_url}&limit=${LIMIT}"
@@ -146,7 +149,9 @@ execute_auto_signing() {
     log_message "INFO" "$SEPARATOR"
     log_message "INFO" "Status: $STATUS"
     log_message "INFO" "NIK: $(mask_data "$NIK")"
-    log_message "INFO" "Token: $(mask_data "$BEARER_TOKEN")"
+    if [ -n "$BEARER_TOKEN" ]; then
+        log_message "INFO" "Token: $(mask_data "$BEARER_TOKEN")"
+    fi
     log_message "INFO" "Limit: ${LIMIT:-unlimited}"
     log_message "INFO" "API URL: $safe_url"
     log_message "INFO" "Making HTTP request..."
