@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ============================================
-# Delete Peserta by ID Script
+# Delete User by ID Script
 # ============================================
 
 # Configuration
-API_URL="http://localhost:8093/api/peserta/delete-peserta-by-id"
-LOG_FILE="delete-peserta.log"
+API_URL="http://localhost:8094/api/users/delete-user-by-id"
+LOG_FILE="delete-user.log"
 
 # Colors for output
 RED='\033[0;31m'
@@ -29,16 +29,16 @@ log_simple() {
 > "$LOG_FILE"
 
 log_simple "╔════════════════════════════════════════════════════════════════════════════════╗"
-log_simple "║              DELETE PESERTA BY ID AUTOMATION SCRIPT                            ║"
+log_simple "║              DELETE USER BY ID AUTOMATION SCRIPT                               ║"
 log_simple "╚════════════════════════════════════════════════════════════════════════════════╝"
 log ""
 
 # Check if the API is accessible
 log "Checking API availability..."
-if curl -s -o /dev/null -w "%{http_code}" "$API_URL" | grep -q "200\|500"; then
+if curl -s -o /dev/null -w "%{http_code}" "http://localhost:8094/api/users/health" | grep -q "200"; then
     log "${GREEN}✓ API is accessible${NC}"
 else
-    log "${RED}✗ API is not accessible. Please ensure the application is running on port 8092${NC}"
+    log "${RED}✗ API is not accessible. Please ensure the application is running on port 8094${NC}"
     exit 1
 fi
 
@@ -64,23 +64,23 @@ log ""
 
 # Check if request was successful
 if [ "$HTTP_STATUS" -eq 200 ]; then
-    log "${GREEN}✓ Delete peserta process completed successfully${NC}"
+    log "${GREEN}✓ Delete user process completed successfully${NC}"
     
     # Parse summary from response
     DELETED=$(echo "$RESPONSE_BODY" | grep -o '"deletedCount":[0-9]*' | cut -d':' -f2)
-    PROCESSED=$(echo "$RESPONSE_BODY" | grep -o '"processedNipCount":[0-9]*' | cut -d':' -f2)
+    PROCESSED=$(echo "$RESPONSE_BODY" | grep -o '"processedUsernameCount":[0-9]*' | cut -d':' -f2)
     ERRORS=$(echo "$RESPONSE_BODY" | grep -o '"errorCount":[0-9]*' | cut -d':' -f2)
     
     log ""
     log "═════════════════════════════════════════════════════════════════════════════════"
     log "                           SUMMARY                                                "
     log "═════════════════════════════════════════════════════════════════════════════════"
-    log "NIPs Processed: ${PROCESSED:-N/A}"
-    log "Peserta Deleted: ${DELETED:-N/A}"
+    log "Usernames Processed: ${PROCESSED:-N/A}"
+    log "Users Deleted: ${DELETED:-N/A}"
     log "Errors: ${ERRORS:-N/A}"
     log "═════════════════════════════════════════════════════════════════════════════════"
 else
-    log "${RED}✗ Delete peserta process failed with HTTP status: $HTTP_STATUS${NC}"
+    log "${RED}✗ Delete user process failed with HTTP status: $HTTP_STATUS${NC}"
     exit 1
 fi
 
